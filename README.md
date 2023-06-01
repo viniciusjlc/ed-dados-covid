@@ -1,1 +1,1 @@
-# projetoED-dados-covid
+# ed-dados-covid
