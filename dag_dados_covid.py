@@ -15,7 +15,7 @@ STRING_CONEXAO = "dbname='engdados' host='host.docker.internal' port='5442' user
 STRING_CONEXAO_SQLALCHEMY = "postgresql://airflow:airflow@host.docker.internal:5442/engdados"
 
 dag_args = {
-    'owner': 'Teste',
+    'owner': 'Airflow',
     'start_date': datetime(2023, 6, 3),
     'retries': 1,
     'retry_delay': timedelta(minutes=2)
@@ -26,7 +26,7 @@ dag_teste = DAG('dag_dados_covid',
                 description='DAG Dados COVID',
                 schedule_interval='15 * * * *',
                 catchup=False,
-                tags=['trabalho, covid', 'engenharia', 'dados']
+                tags=['trabalho', 'covid', 'engenharia', 'dados']
                 )
 
 
