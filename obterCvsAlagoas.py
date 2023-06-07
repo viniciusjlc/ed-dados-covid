@@ -2,7 +2,7 @@ import psycopg2
 import pandas as pd
 from sqlalchemy import create_engine
 
-conn_string = 'postgresql://postgres:postgres@localhost:5432/de'
+conn_string = 'postgresql://postgres:post@localhost:5432/de'
 
 db = create_engine(conn_string)
 conn = db.connect()
