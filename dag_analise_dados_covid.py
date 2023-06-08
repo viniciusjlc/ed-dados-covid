@@ -41,21 +41,21 @@ def criar_tabelas_estatisticas_covid_banco():
                                         "id serial primary key, " \
                                         "sexo char(1), " \
                                         "quantidate bigint, " \
-                                        "porcentagen double precision);"
+                                        "porcentagem double precision);"
     cursor.execute(sql_criar_tabela_est_covid_genero)
 
     sql_criar_tabela_est_covid_recuperados_obito = "create table est_covid_recuperados_obito(" \
                                                    "id serial primary key, " \
                                                    "situacao character varying(32), " \
                                                    "quantidate bigint, " \
-                                                   "porcentagen double precision);"
+                                                   "porcentagem double precision);"
     cursor.execute(sql_criar_tabela_est_covid_recuperados_obito)
 
     sql_criar_tabela_est_covid_comorbidades = "create table est_covid_comorbidades(" \
                                               "id serial primary key, " \
                                               "possui_comorbidades char(1), " \
                                               "quantidate bigint, " \
-                                              "porcentagen double precision);"
+                                              "porcentagem double precision);"
     cursor.execute(sql_criar_tabela_est_covid_comorbidades)
 
     conexao.commit()
@@ -78,10 +78,10 @@ def obter_porcentagem_mulheres_homens_covid():
     print("Porcentagem mulheres: ", porcentagem_mulheres, "%")
     print("Porcentagem homens: ", porcentagem_homens, "%")
 
-    sql = "insert into est_covid_genero (sexo, quantidate, porcentagen) values('{}','{}','{}')".format('F', total_mulheres, porcentagem_mulheres)
+    sql = "insert into est_covid_genero (sexo, quantidate, porcentagem) values('{}',{},{})".format('F', total_mulheres, porcentagem_mulheres)
     cursor.execute(cursor.mogrify(sql))
 
-    sql = "insert into est_covid_genero (sexo, quantidate, porcentagen) values('{}','{}','{}')".format('M', total_homens, porcentagem_homens)
+    sql = "insert into est_covid_genero (sexo, quantidate, porcentagem) values('{}',{},{})".format('M', total_homens, porcentagem_homens)
     cursor.execute(cursor.mogrify(sql))
 
     conexao.commit()
@@ -108,13 +108,13 @@ def obter_porcentagem_recuperado_obitos_covid():
     print("Porcentagem óbitos por COVID: ", porcentagem_obitos, "%")
     print("Porcentagem óbitos por outros motivos: ", porcentagem_obtos_outros, "%")
 
-    sql = "insert into est_covid_recuperados_obito (situacao, quantidate, porcentagen) values('{}','{}','{}')".format('RECUPERADOS', total_recuperados, porcentagem_recuperados)
+    sql = "insert into est_covid_recuperados_obito (situacao, quantidate, porcentagem) values('{}',{},{})".format('RECUPERADOS', total_recuperados, porcentagem_recuperados)
     cursor.execute(cursor.mogrify(sql))
 
-    sql = "insert into est_covid_recuperados_obito (situacao, quantidate, porcentagen) values('{}','{}','{}')".format('ÓBITO', total_obitos_covid, porcentagem_obitos)
+    sql = "insert into est_covid_recuperados_obito (situacao, quantidate, porcentagem) values('{}',{},{})".format('ÓBITO', total_obitos_covid, porcentagem_obitos)
     cursor.execute(cursor.mogrify(sql))
 
-    sql = "insert into est_covid_recuperados_obito (situacao, quantidate, porcentagen) values('{}','{}','{}')".format('ÓBITO OUTRAS CAUSAS', total_obitos_outros, porcentagem_obtos_outros)
+    sql = "insert into est_covid_recuperados_obito (situacao, quantidate, porcentagem) values('{}',{},{})".format('ÓBITO OUTRAS CAUSAS', total_obitos_outros, porcentagem_obtos_outros)
     cursor.execute(cursor.mogrify(sql))
 
     conexao.commit()
@@ -137,10 +137,10 @@ def obter_porcentagem_pessoas_covid_com_comorbidades():
     print("Porcentagem de pessoas sem comorbidades: ", porcentagem_total_sem_comorbidade, "%")
     print("Porcentagem de pessoas com comorbidades: ", porcentagem_total_com_comorbidade, "%")
 
-    sql = "insert into est_covid_comorbidades (possui_comorbidades, quantidate, porcentagen) values('{}','{}','{}')".format('N', total_sem_comorbidade, porcentagem_total_sem_comorbidade)
+    sql = "insert into est_covid_comorbidades (possui_comorbidades, quantidate, porcentagem) values('{}',{},{})".format('N', total_sem_comorbidade, porcentagem_total_sem_comorbidade)
     cursor.execute(cursor.mogrify(sql))
 
-    sql = "insert into est_covid_comorbidades (possui_comorbidades, quantidate, porcentagen) values('{}','{}','{}')".format('S', total_com_comorbidade, porcentagem_total_com_comorbidade)
+    sql = "insert into est_covid_comorbidades (possui_comorbidades, quantidate, porcentagem) values('{}',{},{})".format('S', total_com_comorbidade, porcentagem_total_com_comorbidade)
     cursor.execute(cursor.mogrify(sql))
 
     conexao.commit()
