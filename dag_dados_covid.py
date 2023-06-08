@@ -1,15 +1,11 @@
 from datetime import timedelta, datetime
 
-from airflow import DAG
-
-import psycopg2
-import pandas as pd
 import numpy as np
-
-from sqlalchemy import create_engine
-
-from airflow.operators.empty import EmptyOperator
+import pandas as pd
+import psycopg2
+from airflow import DAG
 from airflow.operators.python import PythonOperator
+from sqlalchemy import create_engine
 
 # conexão detro do airflow
 STRING_CONEXAO = "dbname='engdados' host='host.docker.internal' port='5442' user='airflow' password='airflow'"
@@ -22,13 +18,13 @@ dag_args = {
     'retry_delay': timedelta(minutes=60)
 }
 
-dag_teste = DAG('dag_dados_covid_2',
-                default_args=dag_args,
-                description='DAG Dados COVID',
-                schedule_interval='60 * * * *',
-                catchup=False,
-                tags=['trabalho', 'covid', 'engenharia', 'dados']
-                )
+dag_dados_covid = DAG('dag_dados_covid',
+                      default_args=dag_args,
+                      description='DAG Dados COVID',
+                      schedule_interval='59 * * * *',
+                      catchup=False,
+                      tags=['trabalho', 'covid', 'engenharia', 'dados']
+                      )
 
 
 def limpar_banco():
@@ -44,7 +40,8 @@ def obter_dados_covid_alagoas():
     db = create_engine(STRING_CONEXAO_SQLALCHEMY)
     conexao = db.connect()
 
-    data = pd.read_csv('/opt/airflow/dags/dados/dados_abertos_maceio_covid.csv', encoding="ISO-8859-1", sep=';', low_memory=False)
+    data = pd.read_csv('/opt/airflow/dags/dados/dados_abertos_maceio_covid.csv', encoding="ISO-8859-1", sep=';',
+                       low_memory=False)
 
     df = pd.DataFrame(data)
     df.to_sql('covid_alagoas', con=conexao, if_exists='replace', index=True)
@@ -61,7 +58,8 @@ def obter_dados_covid_santa_catarina():
     db = create_engine(STRING_CONEXAO_SQLALCHEMY)
     conexao = db.connect()
 
-    data = pd.read_csv('/opt/airflow/dags/dados/dados_abertos_boavista_covid.csv', encoding="ISO-8859-1", sep=';', low_memory=False)
+    data = pd.read_csv('/opt/airflow/dags/dados/dados_abertos_boavista_covid.csv', encoding="ISO-8859-1", sep=';',
+                       low_memory=False)
 
     df = pd.DataFrame(data)
     df.to_sql('covid_santa_catarina', con=conexao, if_exists='replace', index=True)
@@ -109,39 +107,39 @@ def tratar_dados_alagoas():
           "from covid_alagoas " \
           "order by data_atendimento"
 
-    dataFrame = pd.read_sql(sql, conexao)
+    df = pd.read_sql(sql, conexao)
 
     # tratando idade
-    dataFrame = dataFrame[dataFrame.idade.apply(lambda valor: valor.isnumeric())]
+    df = df[df.idade.apply(lambda valor: valor.isnumeric())]
 
     # tratando sexo
-    dataFrame['sexo'] = dataFrame['sexo'].str.strip()
-    dataFrame['sexo'] = dataFrame['sexo'].str.upper()
+    df['sexo'] = df['sexo'].str.strip()
+    df['sexo'] = df['sexo'].str.upper()
 
     # tratando comorbidades
-    dataFrame['comorbidades'] = dataFrame['comorbidades'].str.strip()
-    dataFrame['comorbidades'] = dataFrame['comorbidades'].str.upper()
-    dataFrame['comorbidades'] = dataFrame['comorbidades'].replace('/', ',', regex=True)
-    dataFrame['comorbidades'] = dataFrame['comorbidades'].replace('SEM COMORBIDADE', None, regex=True)
-    dataFrame['comorbidades'] = dataFrame['comorbidades'].replace('SEM INFORMAÇÃO', None, regex=True)
-    dataFrame['comorbidades'] = dataFrame['comorbidades'].replace('RECUPERADO', None, regex=True)
+    df['comorbidades'] = df['comorbidades'].str.strip()
+    df['comorbidades'] = df['comorbidades'].str.upper()
+    df['comorbidades'] = df['comorbidades'].replace('/', ',', regex=True)
+    df['comorbidades'] = df['comorbidades'].replace('SEM COMORBIDADE', None, regex=True)
+    df['comorbidades'] = df['comorbidades'].replace('SEM INFORMAÇÃO', None, regex=True)
+    df['comorbidades'] = df['comorbidades'].replace('RECUPERADO', None, regex=True)
 
     # tratando data_obito
-    dataFrame['data_obito'] = dataFrame['data_obito'].replace({np.nan: None})
+    df['data_obito'] = df['data_obito'].replace({np.nan: None})
 
     # tratando situacao
-    dataFrame['situacao'] = dataFrame['situacao'].str.strip()
-    dataFrame['situacao'] = dataFrame['situacao'].str.upper()
+    df['situacao'] = df['situacao'].str.strip()
+    df['situacao'] = df['situacao'].str.upper()
 
     # tratando municipios
-    dataFrame['municipio'] = dataFrame['municipio'].str.strip()
-    dataFrame['municipio'] = dataFrame['municipio'].str.upper()
+    df['municipio'] = df['municipio'].str.strip()
+    df['municipio'] = df['municipio'].str.upper()
 
-    print(dataFrame[['data_atendimento', 'idade', 'sexo', 'comorbidades', 'data_obito']].head(10))
+    print(df[['data_atendimento', 'idade', 'sexo', 'comorbidades', 'data_obito']].head(10))
 
-    colunas = ",".join([str(i) for i in dataFrame.columns.tolist()])
+    colunas = ",".join([str(i) for i in df.columns.tolist()])
     print("INICIO INSERT")
-    for i, row in dataFrame.iterrows():
+    for i, row in df.iterrows():
         sql = "insert into dados_covid (" + colunas + ") values (" + "%s," * (len(row) - 1) + "%s)"
         cursor.execute(sql, tuple(row))
 
@@ -168,31 +166,31 @@ def tratar_dados_santa_catarina():
           "from covid_boavista " \
           "order by data_atendimento"
 
-    dataFrame = pd.read_sql(sql, conexao)
+    df = pd.read_sql(sql, conexao)
 
     # tratando data_atendimento
-    dataFrame['data_atendimento'] = dataFrame['data_atendimento'].replace(r'[a-zA-Z]', np.nan, regex=True)
-    dataFrame = dataFrame.dropna(subset=['data_atendimento'])
-    dataFrame['data_atendimento'] = pd.to_datetime(dataFrame['data_atendimento'], format="%d/%m/%Y")
+    df['data_atendimento'] = df['data_atendimento'].replace(r'[a-zA-Z]', np.nan, regex=True)
+    df = df.dropna(subset=['data_atendimento'])
+    df['data_atendimento'] = pd.to_datetime(df['data_atendimento'], format="%d/%m/%Y")
 
     # tratando idade
-    dataFrame = dataFrame.dropna(subset=['idade'])
-    dataFrame['idade'] = dataFrame['idade'].apply(np.int64)
+    df = df.dropna(subset=['idade'])
+    df['idade'] = df['idade'].apply(np.int64)
 
     # tratando sexo
-    dataFrame['sexo'] = dataFrame['sexo'].replace('FEMININO', 'F', regex=True)
-    dataFrame['sexo'] = dataFrame['sexo'].replace('MASCULINO', 'M', regex=True)
-    dataFrame['sexo'] = dataFrame['sexo'].replace('NAO INFORMADO', np.nan, regex=True)
-    dataFrame = dataFrame.dropna(subset=['sexo'])
+    df['sexo'] = df['sexo'].replace('FEMININO', 'F', regex=True)
+    df['sexo'] = df['sexo'].replace('MASCULINO', 'M', regex=True)
+    df['sexo'] = df['sexo'].replace('NAO INFORMADO', np.nan, regex=True)
+    df = df.dropna(subset=['sexo'])
 
     # tratando situacao
-    dataFrame['situacao'] = dataFrame['situacao'].replace('SIM', 'RECUPERADO', regex=True)
-    dataFrame['situacao'] = dataFrame['situacao'].replace('NÃO', 'ÓBITO', regex=True)
-    dataFrame['situacao'] = dataFrame['situacao'].replace('NAO', 'ÓBITO', regex=True)
+    df['situacao'] = df['situacao'].replace('SIM', 'RECUPERADO', regex=True)
+    df['situacao'] = df['situacao'].replace('NÃO', 'ÓBITO', regex=True)
+    df['situacao'] = df['situacao'].replace('NAO', 'ÓBITO', regex=True)
 
-    colunas = ",".join([str(i) for i in dataFrame.columns.tolist()])
+    colunas = ",".join([str(i) for i in df.columns.tolist()])
     print("INICIO INSERT")
-    for i, row in dataFrame.iterrows():
+    for i, row in df.iterrows():
         sql = "insert into dados_covid (" + colunas + ") values (" + "%s," * (len(row) - 1) + "%s)"
         cursor.execute(sql, tuple(row))
 
@@ -201,22 +199,26 @@ def tratar_dados_santa_catarina():
 
 
 # Tarefa 1
-tarefa_1 = PythonOperator(task_id='limpar_banco', python_callable=limpar_banco, dag=dag_teste)
+tarefa_1 = PythonOperator(task_id='limpar_banco', python_callable=limpar_banco, dag=dag_dados_covid)
 
 # Tarefa 2
-tarefa_2 = PythonOperator(task_id='criar_tabela_dados_covid', python_callable=criar_tabela_dados_covid, dag=dag_teste)
+tarefa_2 = PythonOperator(task_id='criar_tabela_dados_covid', python_callable=criar_tabela_dados_covid,
+                          dag=dag_dados_covid)
 
 # Tarefa 3
-tarefa_3 = PythonOperator(task_id='obter_dados_covid_alagoas', python_callable=obter_dados_covid_alagoas, dag=dag_teste)
+tarefa_3 = PythonOperator(task_id='obter_dados_covid_alagoas', python_callable=obter_dados_covid_alagoas,
+                          dag=dag_dados_covid)
 
 # Tarefa 4
-tarefa_4 = PythonOperator(task_id='obter_dados_covid_santa_catarina', python_callable=obter_dados_covid_santa_catarina, dag=dag_teste)
+tarefa_4 = PythonOperator(task_id='obter_dados_covid_santa_catarina', python_callable=obter_dados_covid_santa_catarina,
+                          dag=dag_dados_covid)
 
 # Tarefa 5
-tarefa_5 = PythonOperator(task_id='tratar_dados_alagoas', python_callable=tratar_dados_alagoas, dag=dag_teste)
+tarefa_5 = PythonOperator(task_id='tratar_dados_alagoas', python_callable=tratar_dados_alagoas, dag=dag_dados_covid)
 
 # Tarefa 6
-tarefa_6 = PythonOperator(task_id='tratar_dados_santa_catarina', python_callable=tratar_dados_santa_catarina, dag=dag_teste)
+tarefa_6 = PythonOperator(task_id='tratar_dados_santa_catarina', python_callable=tratar_dados_santa_catarina,
+                          dag=dag_dados_covid)
 
 tarefa_1 >> tarefa_2 >> [tarefa_3, tarefa_4]
 tarefa_3 >> tarefa_5
