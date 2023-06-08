@@ -163,7 +163,7 @@ def tratar_dados_santa_catarina():
           "comorbidades, " \
           "recuperados                       as situacao, " \
           "to_date(data_obito, 'DD/MM/YYYY') as data_obito " \
-          "from covid_boavista " \
+          "from covid_santa_catarina " \
           "order by data_atendimento"
 
     df = pd.read_sql(sql, conexao)
