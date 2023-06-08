@@ -12,24 +12,30 @@ dag_args = {
     'owner': 'Airflow',
     'start_date': datetime(2023, 6, 6),
     'retries': 0,
-    'retry_delay': timedelta(minutes=59)
+    'retry_delay': timedelta(minutes=60)
 }
 
 dag_analise_dados_covid = DAG('dag_analise_dados_covid',
                               default_args=dag_args,
                               description='DAG Análise Dados COVID',
-                              schedule_interval='60 * * * *',
+                              schedule_interval='59 * * * *',
                               catchup=False,
                               tags=['trabalho', 'covid', 'engenharia', 'dados']
                               )
 
 
-def excluir_e_recriar_tabelas_estatisticas_covid_banco():
+def excluir_tabelas_estatisticas_covid_banco():
     conexao = psycopg2.connect(STRING_CONEXAO)
     cursor = conexao.cursor()
-    cursor.execute("drop table if exists est_covid_recuperados_obito")
+    cursor.execute("drop table if exists est_covid_genero")
     cursor.execute("drop table if exists est_covid_recuperados_obito")
     cursor.execute("drop table if exists est_covid_comorbidades")
+    conexao.commit()
+
+
+def criar_tabelas_estatisticas_covid_banco():
+    conexao = psycopg2.connect(STRING_CONEXAO)
+    cursor = conexao.cursor()
 
     sql_criar_tabela_est_covid_genero = "create table est_covid_genero(" \
                                         "id serial primary key, " \
@@ -73,10 +79,10 @@ def obter_porcentagem_mulheres_homens_covid():
     print("Porcentagem homens: ", porcentagem_homens, "%")
 
     sql = "insert into est_covid_genero (sexo, quantidate, porcentagen) values('{}','{}','{}')".format('F', total_mulheres, porcentagem_mulheres)
-    print(cursor.mogrify(sql))
+    cursor.execute(cursor.mogrify(sql))
 
     sql = "insert into est_covid_genero (sexo, quantidate, porcentagen) values('{}','{}','{}')".format('M', total_homens, porcentagem_homens)
-    print(cursor.mogrify(sql))
+    cursor.execute(cursor.mogrify(sql))
 
     conexao.commit()
 
@@ -103,13 +109,13 @@ def obter_porcentagem_recuperado_obitos_covid():
     print("Porcentagem óbitos por outros motivos: ", porcentagem_obtos_outros, "%")
 
     sql = "insert into est_covid_recuperados_obito (situacao, quantidate, porcentagen) values('{}','{}','{}')".format('RECUPERADOS', total_recuperados, porcentagem_recuperados)
-    print(cursor.mogrify(sql))
+    cursor.execute(cursor.mogrify(sql))
 
     sql = "insert into est_covid_recuperados_obito (situacao, quantidate, porcentagen) values('{}','{}','{}')".format('ÓBITO', total_obitos_covid, porcentagem_obitos)
-    print(cursor.mogrify(sql))
+    cursor.execute(cursor.mogrify(sql))
 
     sql = "insert into est_covid_recuperados_obito (situacao, quantidate, porcentagen) values('{}','{}','{}')".format('ÓBITO OUTRAS CAUSAS', total_obitos_outros, porcentagem_obtos_outros)
-    print(cursor.mogrify(sql))
+    cursor.execute(cursor.mogrify(sql))
 
     conexao.commit()
 
@@ -132,32 +138,37 @@ def obter_porcentagem_pessoas_covid_com_comorbidades():
     print("Porcentagem de pessoas com comorbidades: ", porcentagem_total_com_comorbidade, "%")
 
     sql = "insert into est_covid_comorbidades (possui_comorbidades, quantidate, porcentagen) values('{}','{}','{}')".format('N', total_sem_comorbidade, porcentagem_total_sem_comorbidade)
-    print(cursor.mogrify(sql))
+    cursor.execute(cursor.mogrify(sql))
 
     sql = "insert into est_covid_comorbidades (possui_comorbidades, quantidate, porcentagen) values('{}','{}','{}')".format('S', total_com_comorbidade, porcentagem_total_com_comorbidade)
-    print(cursor.mogrify(sql))
+    cursor.execute(cursor.mogrify(sql))
 
     conexao.commit()
 
 
 # Tarefa 1
-tarefa_1 = PythonOperator(task_id='excluir_e_recriar_tabelas_estatisticas_covid_banco',
-                          python_callable=excluir_e_recriar_tabelas_estatisticas_covid_banco,
+tarefa_1 = PythonOperator(task_id='excluir_tabelas_estatisticas_covid_banco',
+                          python_callable=excluir_tabelas_estatisticas_covid_banco,
                           dag=dag_analise_dados_covid)
 
 # Tarefa 2
-tarefa_2 = PythonOperator(task_id='obter_porcentagem_mulheres_homens_covid',
-                          python_callable=obter_porcentagem_mulheres_homens_covid,
+tarefa_2 = PythonOperator(task_id='criar_tabelas_estatisticas_covid_banco',
+                          python_callable=criar_tabelas_estatisticas_covid_banco,
                           dag=dag_analise_dados_covid)
 
 # Tarefa 3
-tarefa_3 = PythonOperator(task_id='obter_porcentagem_recuperado_obitos_covid',
-                          python_callable=obter_porcentagem_recuperado_obitos_covid,
+tarefa_3 = PythonOperator(task_id='obter_porcentagem_mulheres_homens_covid',
+                          python_callable=obter_porcentagem_mulheres_homens_covid,
                           dag=dag_analise_dados_covid)
 
 # Tarefa 4
-tarefa_4 = PythonOperator(task_id='obter_porcentagem_pessoas_covid_com_comorbidades',
+tarefa_4 = PythonOperator(task_id='obter_porcentagem_recuperado_obitos_covid',
+                          python_callable=obter_porcentagem_recuperado_obitos_covid,
+                          dag=dag_analise_dados_covid)
+
+# Tarefa 5
+tarefa_5 = PythonOperator(task_id='obter_porcentagem_pessoas_covid_com_comorbidades',
                           python_callable=obter_porcentagem_pessoas_covid_com_comorbidades,
                           dag=dag_analise_dados_covid)
 
-tarefa_1 >> [tarefa_2, tarefa_3, tarefa_4]
+tarefa_1 >> tarefa_2 >> [tarefa_3, tarefa_4, tarefa_5]
