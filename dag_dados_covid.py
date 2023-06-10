@@ -105,6 +105,8 @@ def tratar_dados_alagoas():
           "\"Situação do paciente confirmado (UTI, isolamento domiciliar, \" as situacao, " \
           "\"Data do Óbito (Caso haja)\"                                     as data_obito " \
           "from covid_alagoas " \
+          "where \"Data de atendimento no Serviço\"  >= '2020-02-20' " \
+          "and \"Data de atendimento no Serviço\"  <= '2023-01-01'" \
           "order by data_atendimento"
 
     df = pd.read_sql(sql, conexao)
@@ -164,6 +166,8 @@ def tratar_dados_santa_catarina():
           "recuperados                       as situacao, " \
           "to_date(data_obito, 'DD/MM/YYYY') as data_obito " \
           "from covid_santa_catarina " \
+          "where data_coleta  >= '2020-02-20' " \
+          "and data_coleta  <= '2023-01-01'" \
           "order by data_atendimento"
 
     df = pd.read_sql(sql, conexao)
