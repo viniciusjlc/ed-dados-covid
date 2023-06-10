@@ -5,3 +5,6 @@ Grupo:
 - Emerson Araújo Rolemberg Gama
 - Luis Fernando Pereira Santos
 - Vinicius José Lopes Cursino
+
+
+Fonte dos dados: Dados Abertos Santa Catarina e Dados Abertos Alagoas
